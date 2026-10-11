@@ -1,0 +1,7 @@
+target/
+data/
+.idea/
+*.iml
+build-output.txt
+*.log
+.DS_Store
