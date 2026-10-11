@@ -1,4 +1,0 @@
-'use strict';
-// Member 03: list columns, create/edit form fields, labels and filtering.
-window.HotelModules = window.HotelModules || {};
-window.HotelModules.reservations = {label:'Reservations',singular:'reservation',description:'Seamless arrivals, memorable stays, and everything in between.',filter:'status',columns:[['id','Booking'],['guest_id','Guest'],['room_id','Room'],['check_in','Check-in'],['check_out','Check-out'],['total','Stay total'],['status','Status']],fields:[['guest_id','Guest','guest'],['room_id','Room','room'],['check_in','Check-in date','date'],['check_out','Check-out date','date'],['party_size','Number of guests','number'],['type','Booking type','select',['ADVANCE','WALK_IN']],['status','Reservation status','select',['CONFIRMED','CHECKED_IN','CHECKED_OUT','CANCELLED']]]};
