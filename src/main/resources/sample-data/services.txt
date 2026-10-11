@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Coastal breakfast",
+    "category": "DINING",
+    "type": "PAID",
+    "base_cost": 3500,
+    "status": "ACTIVE",
+    "description": "A seasonal breakfast, served fresh each morning."
+  },
+  {
+    "name": "Signature spa ritual",
+    "category": "WELLNESS",
+    "type": "PAID",
+    "base_cost": 8500,
+    "status": "ACTIVE",
+    "description": "A 60-minute restorative treatment."
+  },
+  {
+    "name": "Airport transfer",
+    "category": "TRANSPORT",
+    "type": "PAID",
+    "base_cost": 12000,
+    "status": "ACTIVE",
+    "description": "Private arrival and departure transfers."
+  },
+  {
+    "name": "Pool & fitness studio",
+    "category": "LEISURE",
+    "type": "COMPLIMENTARY",
+    "base_cost": 0,
+    "status": "ACTIVE",
+    "description": "Daily access included for every guest."
+  }
+]

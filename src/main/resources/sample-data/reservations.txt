@@ -1,0 +1,35 @@
+[
+  {
+    "guest_id": 1,
+    "room_id": 4,
+    "check_in": "2026-10-11",
+    "check_out": "2026-10-14",
+    "party_size": 2,
+    "type": "ADVANCE",
+    "status": "CONFIRMED",
+    "total": 124740,
+    "cancellation_fee": 0
+  },
+  {
+    "guest_id": 2,
+    "room_id": 1,
+    "check_in": "2026-10-10",
+    "check_out": "2026-10-12",
+    "party_size": 2,
+    "type": "WALK_IN",
+    "status": "CHECKED_IN",
+    "total": 36000,
+    "cancellation_fee": 0
+  },
+  {
+    "guest_id": 3,
+    "room_id": 2,
+    "check_in": "2026-10-01",
+    "check_out": "2026-10-04",
+    "party_size": 2,
+    "type": "ADVANCE",
+    "status": "CHECKED_OUT",
+    "total": 54000,
+    "cancellation_fee": 0
+  }
+]

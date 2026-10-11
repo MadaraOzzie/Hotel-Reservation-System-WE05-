@@ -1,0 +1,18 @@
+[
+  {
+    "reservation_id": 3,
+    "author": "Sofia Silva",
+    "type": "VERIFIED",
+    "rating": 5,
+    "text": "Thoughtful service, beautiful rooms, and a wonderfully calm stay.",
+    "status": "PUBLISHED"
+  },
+  {
+    "reservation_id": null,
+    "author": "Anonymous",
+    "type": "ANONYMOUS",
+    "rating": 4,
+    "text": "Loved the breakfast and the quiet pool area.",
+    "status": "PUBLISHED"
+  }
+]
