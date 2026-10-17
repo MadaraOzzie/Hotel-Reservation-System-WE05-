@@ -8,6 +8,6 @@ import com.hrrs.hotelroomreservationsystem.utils.GuestFileManager;
  */
 public final class GuestServlet extends CrudServlet {
     public GuestServlet() {
-        super(Module., new GuestFileManager());
+        super(Module.GUESTS, new GuestFileManager());
     }
 }
