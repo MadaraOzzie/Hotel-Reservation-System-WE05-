@@ -1,0 +1,50 @@
+[
+  {
+    "number": "101",
+    "type": "STANDARD",
+    "capacity": 2,
+    "base_price": 18000,
+    "luxury_tax": 0,
+    "status": "AVAILABLE"
+  },
+  {
+    "number": "102",
+    "type": "STANDARD",
+    "capacity": 2,
+    "base_price": 18000,
+    "luxury_tax": 0,
+    "status": "AVAILABLE"
+  },
+  {
+    "number": "103",
+    "type": "STANDARD",
+    "capacity": 3,
+    "base_price": 22000,
+    "luxury_tax": 0,
+    "status": "AVAILABLE"
+  },
+  {
+    "number": "201",
+    "type": "SUITE",
+    "capacity": 4,
+    "base_price": 42000,
+    "luxury_tax": 0.1,
+    "status": "AVAILABLE"
+  },
+  {
+    "number": "202",
+    "type": "SUITE",
+    "capacity": 4,
+    "base_price": 45000,
+    "luxury_tax": 0.1,
+    "status": "AVAILABLE"
+  },
+  {
+    "number": "203",
+    "type": "SUITE",
+    "capacity": 2,
+    "base_price": 38000,
+    "luxury_tax": 0.1,
+    "status": "MAINTENANCE"
+  }
+]
