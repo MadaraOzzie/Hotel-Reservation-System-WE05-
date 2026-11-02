@@ -20,6 +20,13 @@ class HotelIntegrationTest {
         return result;
     }
     @BeforeEach void initialize() throws Exception { FileStore.useDirectory(temp.resolve("store"));FileStore.initialize(); }
+    @Test void initializationSkipsSeedDataForNonEmptyModules() throws Exception {
+        FileStore.useDirectory(temp.resolve("partial-store"));
+        new FileRepository(Module.GUESTS).save(0,fields("name","Existing Guest","email","sr@gmail.com","phone","0771234567","type","VIP","discount_rate","0.10"));
+
+        assertDoesNotThrow(FileStore::initialize);
+        assertEquals(1,new FileRepository(Module.GUESTS).findAll().size());
+    }
     private Map<String,Object> reservation(String in,String out) {
         return fields("guest_id","1","room_id","4","check_in",in,"check_out",out,"party_size","2","type","ADVANCE","status","CONFIRMED");
     }

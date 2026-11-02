@@ -113,6 +113,7 @@ public final class FileStore {
         }
     }
     private static void seedFromResource(Module module) throws IOException {
+        if(!new FileRepository(module).findAll().isEmpty()) return;
         for(Map<String,Object> row:resourceRecords("/sample-data/"+module.table()+".txt")) {
             if(module==Module.STAFF) row.put("password_hash",Passwords.hash((String)row.remove("password")));
             insert(module,row);
