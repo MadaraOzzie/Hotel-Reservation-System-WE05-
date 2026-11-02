@@ -15,7 +15,7 @@ Set `JAVA_HOME` to your JDK if your computer has multiple Java installations. If
 ### Windows
 
 ```bat
-git clone https://github.com/evanmunasinghe/Hotel-Reservation-System-WE05-.git
+git clone https://github.com/MadaraOzzie/Hotel-Reservation-System-WE05-.git
 cd Hotel-Reservation-System-WE05-
 build.bat
 start.bat
@@ -24,7 +24,7 @@ start.bat
 ### macOS / Linux
 
 ```sh
-git clone https://github.com/evanmunasinghe/Hotel-Reservation-System-WE05-.git
+git clone https://github.com/MadaraOzzie/Hotel-Reservation-System-WE05-.git
 cd Hotel-Reservation-System-WE05-
 sh build.sh
 sh start.sh
