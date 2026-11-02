@@ -14,7 +14,7 @@ Replace Member 1â€“6 with real names/student IDs. The same three packages a
 ## Shared files and integration ownership
 
 - Member 1 owns the shared Entity/User contract; changes require coordination with Member 4.
-- Member 2 coordinates `schema.sql`, `Database`, `SqlRepository` and the `Repository` interface.
+- Member 2 coordinates `FileStore`, `FileRepository` and the `Repository` interface.
 - Member 3 coordinates `HotelServiceLayer` and `DomainFactory`. Each member owns their module's validation branch and factory methods; coordinate edits rather than overwriting one another.
 - Member 4 coordinates `ApiServlet`/`CrudServlet`, sessions, authorization and `Application` wiring.
 - Member 5 coordinates `assets/styles.css`, `assets/app.js` shell and dashboard; each member owns their separate `assets/modules/guests.js`, `rooms.js`, `reservations.js`, `staff.js`, `services.js` or `reviews.js` file, which defines their editor fields and table columns.
@@ -31,7 +31,7 @@ The UI uses a shared renderer. Three screens per module are separate navigable r
 5. Call HotelService.calculateCost for PaidService and ComplimentaryService; the latter always returns zero.
 6. Call Review.getDisplayTag for verified/anonymous review objects; output is included in the list API.
 
-All models encapsulate fields, use constructors/getters, inherit shared identity and override domain behavior. Repository is an interface and SqlRepository is its implementation. SQL credentials, hashing and file I/O are hidden behind utility classes.
+All models encapsulate fields, use constructors/getters, inherit shared identity and override domain behavior. Repository is an interface and FileRepository is its implementation. JSON persistence, hashing and export I/O are hidden behind utility classes.
 
 ## Genuine collaboration plan
 

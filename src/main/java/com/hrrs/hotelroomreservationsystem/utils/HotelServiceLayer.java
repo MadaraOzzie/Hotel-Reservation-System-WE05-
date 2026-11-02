@@ -1,26 +1,22 @@
 package com.hrrs.hotelroomreservationsystem.utils;
 
 import com.hrrs.hotelroomreservationsystem.models.*;
-import java.sql.*;
 import java.util.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-/** Business rules and transaction boundaries, independent of HTTP and JSP. */
+/** Business rules and storage boundaries, independent of HTTP and JSP. */
 public final class HotelServiceLayer {
-    // Serializes local writes, including overlap checks, before committing to embedded SQL.
-    // A multi-instance deployment must replace this with database row/advisory locks.
+    // Serializes local writes, including overlap checks, before replacing JSON files.
     private static final Object WRITE_LOCK=new Object();
-    public List<Map<String,Object>> list(Module m) throws SQLException {
-        try(Connection c=Database.open()) {
-            List<Map<String,Object>> rows=new SqlRepository(c,m).findAll();
-            for(Map<String,Object> r:rows) {
-                r.put("display_tag",DomainFactory.entity(m,r).getDisplayTag());
-                if(m==Module.ROOMS) r.put("nightly_price",DomainFactory.room(r).calculateFinalPrice());
-                if(m==Module.SERVICES) r.put("effective_cost",DomainFactory.service(r).calculateCost());
-                r.remove("password_hash");
-            }
-            return rows;
+    public List<Map<String,Object>> list(Module m) {
+        List<Map<String,Object>> rows=new FileRepository(m).findAll();
+        for(Map<String,Object> r:rows) {
+            r.put("display_tag",DomainFactory.entity(m,r).getDisplayTag());
+            if(m==Module.ROOMS) r.put("nightly_price",DomainFactory.room(r).calculateFinalPrice());
+            if(m==Module.SERVICES) r.put("effective_cost",DomainFactory.service(r).calculateCost());
+            r.remove("password_hash");
         }
+        return rows;
     }
     private String text(Map<String,Object> row,String key,int max) {
         Object raw=row.get(key); String value=raw==null?"":raw.toString().trim();
@@ -47,12 +43,11 @@ public final class HotelServiceLayer {
         r.put("email",email); String phone=text(r,"phone",30);
         if(!phone.matches("[+0-9 ()-]{7,30}")) throw new IllegalArgumentException("Enter a valid phone number");
     }
-    private boolean hasActiveBooking(Connection c,String column,long id) throws SQLException {
-        try(PreparedStatement st=c.prepareStatement("SELECT COUNT(*) FROM reservations WHERE "+column+"=? AND status IN ('CONFIRMED','CHECKED_IN')")) {
-            st.setLong(1,id); try(ResultSet rs=st.executeQuery()) {rs.next();return rs.getLong(1)>0;}
-        }
+    private boolean hasActiveBooking(String column,long id) {
+        return new FileRepository(Module.RESERVATIONS).findAll().stream().anyMatch(row->
+                sameId(row.get(column),id) && List.of("CONFIRMED","CHECKED_IN").contains(String.valueOf(row.get("status"))));
     }
-    private void validate(Connection c,Module m,long id,Map<String,Object> r,long actor) throws SQLException {
+    private void validate(Module m,long id,Map<String,Object> r,long actor) {
         switch(m) {
             case GUESTS -> {
                 contact(r); String type=choice(r,"type","STANDARD","VIP"); decimal(r,"discount_rate","0","0.5");
@@ -63,8 +58,8 @@ public final class HotelServiceLayer {
                 decimal(r,"base_price","0.01","10000000"); decimal(r,"luxury_tax","0","0.3");
                 if(type.equals("STANDARD")) r.put("luxury_tax",BigDecimal.ZERO);
                 String status=choice(r,"status","AVAILABLE","MAINTENANCE");
-                if(id>0 && hasActiveBooking(c,"room_id",id)) {
-                    Map<String,Object> old=new SqlRepository(c,m).findById(id);
+                if(id>0 && hasActiveBooking("room_id",id)) {
+                    Map<String,Object> old=new FileRepository(m).findById(id);
                     if(status.equals("MAINTENANCE")) throw new IllegalArgumentException("Cancel or complete active reservations before maintenance");
                     if(Long.parseLong(r.get("capacity").toString())<Long.parseLong(old.get("capacity").toString()))
                         throw new IllegalArgumentException("Room capacity cannot decrease while reservations are active");
@@ -92,14 +87,17 @@ public final class HotelServiceLayer {
                 try {in=LocalDate.parse(text(r,"check_in",10));out=LocalDate.parse(text(r,"check_out",10));}
                 catch(java.time.DateTimeException e) {throw new IllegalArgumentException("Enter valid stay dates");}
                 if(!out.isAfter(in) || out.isAfter(in.plusDays(365))) throw new IllegalArgumentException("Stay must be between 1 and 365 nights");
-                Map<String,Object> roomRow=new SqlRepository(c,Module.ROOMS).findById(room);
-                Map<String,Object> guestRow=new SqlRepository(c,Module.GUESTS).findById(guest);
+                Map<String,Object> roomRow=new FileRepository(Module.ROOMS).findById(room);
+                Map<String,Object> guestRow=new FileRepository(Module.GUESTS).findById(guest);
                 if(party>Integer.parseInt(roomRow.get("capacity").toString())) throw new IllegalArgumentException("Party exceeds room capacity");
                 boolean active=List.of("CONFIRMED","CHECKED_IN").contains(status);
                 if(active && !"AVAILABLE".equals(roomRow.get("status"))) throw new IllegalArgumentException("Room is under maintenance");
-                if(active) try(PreparedStatement st=c.prepareStatement("SELECT id FROM reservations WHERE room_id=? AND id<>? AND status IN ('CONFIRMED','CHECKED_IN') AND check_in<? AND check_out>?")) {
-                    st.setLong(1,room);st.setLong(2,id);st.setObject(3,out);st.setObject(4,in);
-                    try(ResultSet rs=st.executeQuery()) {if(rs.next()) throw new IllegalArgumentException("Room already reserved for these dates");}
+                if(active) for(Map<String,Object> other:new FileRepository(Module.RESERVATIONS).findAll()) {
+                    if(sameId(other.get("id"),id) || !sameId(other.get("room_id"),room)) continue;
+                    if(!List.of("CONFIRMED","CHECKED_IN").contains(String.valueOf(other.get("status")))) continue;
+                    LocalDate otherIn=LocalDate.parse(String.valueOf(other.get("check_in")));
+                    LocalDate otherOut=LocalDate.parse(String.valueOf(other.get("check_out")));
+                    if(in.isBefore(otherOut) && out.isAfter(otherIn)) throw new IllegalArgumentException("Room already reserved for these dates");
                 }
                 if(status.equals("CHECKED_IN") && (LocalDate.now().isBefore(in) || !LocalDate.now().isBefore(out))) throw new IllegalArgumentException("Check-in is only available during the stay dates");
                 if(status.equals("CHECKED_OUT") && LocalDate.now().isBefore(in)) throw new IllegalArgumentException("Cannot check out before arrival");
@@ -107,14 +105,11 @@ public final class HotelServiceLayer {
                 Reservation booking=DomainFactory.reservation(r);
                 BigDecimal total=booking.calculateTotal(DomainFactory.room(roomRow),DomainFactory.guest(guestRow));
                 if(id>0) {
-                    Map<String,Object> old=new SqlRepository(c,m).findById(id);
+                    Map<String,Object> old=new FileRepository(m).findById(id);
                     boolean same=List.of("guest_id","room_id","check_in","check_out","type").stream().allMatch(k->Objects.toString(old.get(k)).equals(Objects.toString(r.get(k))));
                     if(same) total=new BigDecimal(old.get("total").toString());
-                    if(!status.equals("CHECKED_OUT")) {
-                        try(PreparedStatement st=c.prepareStatement("SELECT COUNT(*) FROM reviews WHERE reservation_id=?")) {
-                            st.setLong(1,id); try(ResultSet rs=st.executeQuery()) {rs.next();if(rs.getInt(1)>0) throw new IllegalArgumentException("Remove linked verified reviews before changing completed stay status");}
-                        }
-                    }
+                    if(!status.equals("CHECKED_OUT") && new FileRepository(Module.REVIEWS).findAll().stream().anyMatch(x->sameId(x.get("reservation_id"),id)))
+                        throw new IllegalArgumentException("Remove linked verified reviews before changing completed stay status");
                 }
                 r.put("total",total); r.put("cancellation_fee",status.equals("CANCELLED")?booking.calculateCancellationFee(total):BigDecimal.ZERO);
             }
@@ -123,39 +118,43 @@ public final class HotelServiceLayer {
                 String type=choice(r,"type","VERIFIED","ANONYMOUS");
                 if(type.equals("VERIFIED")) {
                     long booking=integer(r,"reservation_id",1,Long.MAX_VALUE);
-                    Map<String,Object> stay=new SqlRepository(c,Module.RESERVATIONS).findById(booking);
+                    Map<String,Object> stay=new FileRepository(Module.RESERVATIONS).findById(booking);
                     if(!"CHECKED_OUT".equals(stay.get("status"))) throw new IllegalArgumentException("Verified reviews require a checked-out reservation");
                 } else {r.put("reservation_id",null);r.put("author","Anonymous");}
             }
         }
     }
-    public long save(Module m,long id,Map<String,Object> input,long actor) throws SQLException {
+    public long save(Module m,long id,Map<String,Object> input,long actor) {
         synchronized(WRITE_LOCK) {
-            try(Connection c=Database.open()) {
-                c.setAutoCommit(false);
-                try {
-                    if(id>0) new SqlRepository(c,m).findById(id);
-                    Map<String,Object> r=new LinkedHashMap<>();
-                    for(String column:m.columns()) if(input.containsKey(column)) r.put(column,input.get(column));
-                    if(m==Module.STAFF) r.put("password",input.get("password"));
-                    validate(c,m,id,r,actor);
-                    long result=new SqlRepository(c,m).save(id,r);c.commit();log(actor+" "+(id==0?"created ":"updated ")+m.table()+" #"+result);return result;
-                } catch(SQLException|RuntimeException e) {c.rollback();throw e;}
-            }
+            if(id>0) new FileRepository(m).findById(id);
+            Map<String,Object> r=new LinkedHashMap<>();
+            for(String column:m.columns()) if(input.containsKey(column)) r.put(column,input.get(column));
+            if(m==Module.STAFF) r.put("password",input.get("password"));
+            validate(m,id,r,actor);
+            long result=new FileRepository(m).save(id,r);
+            log(actor+" "+(id==0?"created ":"updated ")+m.table()+" #"+result);
+            return result;
         }
     }
-    public void delete(Module m,long id,long actor) throws SQLException {
+    public void delete(Module m,long id,long actor) {
         synchronized(WRITE_LOCK) {
-            try(Connection c=Database.open()) {
-                c.setAutoCommit(false);
-                try {
-                    Map<String,Object> row=new SqlRepository(c,m).findById(id);
-                    if(m==Module.STAFF && id==actor) throw new IllegalArgumentException("You cannot delete your signed-in account");
-                    if(m==Module.RESERVATIONS && List.of("CONFIRMED","CHECKED_IN").contains(row.get("status"))) throw new IllegalArgumentException("Cancel or complete this reservation before deletion");
-                    new SqlRepository(c,m).delete(id);c.commit();log(actor+" deleted "+m.table()+" #"+id);
-                } catch(SQLException|RuntimeException e) {c.rollback();throw e;}
+            Map<String,Object> row=new FileRepository(m).findById(id);
+            if(m==Module.STAFF && id==actor) throw new IllegalArgumentException("You cannot delete your signed-in account");
+            if(m==Module.RESERVATIONS && List.of("CONFIRMED","CHECKED_IN").contains(row.get("status"))) throw new IllegalArgumentException("Cancel or complete this reservation before deletion");
+            if(m==Module.GUESTS || m==Module.ROOMS) {
+                String column=m==Module.GUESTS?"guest_id":"room_id";
+                if(new FileRepository(Module.RESERVATIONS).findAll().stream().anyMatch(x->sameId(x.get(column),id)))
+                    throw new DataConflictException("This record is linked to reservations. Remove linked reservations first.");
             }
+            if(m==Module.RESERVATIONS && new FileRepository(Module.REVIEWS).findAll().stream().anyMatch(x->sameId(x.get("reservation_id"),id)))
+                throw new DataConflictException("This reservation is linked to reviews. Remove linked reviews first.");
+            new FileRepository(m).delete(id);
+            log(actor+" deleted "+m.table()+" #"+id);
         }
+    }
+    private static boolean sameId(Object value,long id) {
+        try {return FileRepository.id(value)==id;}
+        catch(RuntimeException e) {return false;}
     }
     private void log(String message) {try {FileManager.audit(message);} catch(java.io.IOException e) {System.err.println("Audit file unavailable: "+e.getMessage());}}
 }

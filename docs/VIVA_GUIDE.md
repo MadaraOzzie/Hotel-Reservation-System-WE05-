@@ -17,17 +17,17 @@
 - What is the difference between an abstract class and Repository's interface?
 - How does your servlet distinguish list/create/update/delete?
 - Why does an invalid request fail on the server even if browser validation is bypassed?
-- How are prepared-statement parameters different from concatenating SQL values?
-- What does commit/rollback mean? What would happen if a guest deletion cascaded into stays?
-- Why are SQL export snapshots not sufficient for password-preserving database restoration?
+- How does the Module allowlist prevent client input from selecting arbitrary storage fields?
+- What does the atomic temporary-file move protect if validation or serialization fails?
+- Why are export snapshots not sufficient for password-preserving full data restoration?
 - What happens to room availability when a booking is cancelled?
 - Why is money BigDecimal rather than double?
-- Why must date-specific booking checks and insertion share one lock/transaction?
+- Why must date-specific booking checks and the file write share one lock?
 - Why is the UI hidden button not an authorization mechanism?
 - Where does Java read a text file? Where does it write one? How are resources closed?
 
 ## Trace one example
 
-Reservation create form → `POST /api/reservations` → ApiServlet requires a valid session and CSRF token → ReservationServlet inherits CrudServlet.doPost → HotelServiceLayer.save builds allowed fields → validate checks guest/room/dates/capacity/overlap → DomainFactory builds AdvanceBooking, SuiteRoom and VIPGuest → Reservation.calculateTotal dispatches overridden pricing/discount methods → SqlRepository inserts with prepared parameters → transaction commits → audit line is appended → UI returns to the reservation list.
+Reservation create form → `POST /api/reservations` → ApiServlet requires a valid session and CSRF token → ReservationServlet inherits CrudServlet.doPost → HotelServiceLayer.save builds allowed fields → validate checks guest/room/dates/capacity/overlap → DomainFactory builds AdvanceBooking, SuiteRoom and VIPGuest → Reservation.calculateTotal dispatches overridden pricing/discount methods → FileRepository writes the module JSON file through an atomic temporary-file move → audit line is appended → UI returns to the reservation list.
 
 Do not memorize code without understanding it. Each member should run and modify their module, explain a meaningful test and show genuine commit evidence.

@@ -1,7 +1,7 @@
 package com.hrrs.hotelroomreservationsystem.utils;
 
 import java.util.List;
-/** An allowlist: client-provided table/column names never enter SQL. */
+/** An allowlist: client-provided names never reach the storage layer. */
 public enum Module {
     GUESTS("guests", "name,email,phone,type,discount_rate"),
     ROOMS("rooms", "number,type,capacity,base_price,luxury_tax,status"),

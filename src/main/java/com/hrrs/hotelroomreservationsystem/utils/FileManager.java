@@ -6,7 +6,7 @@ import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import com.google.gson.*;
-/** UTF-8 file read/write exercise. SQL remains the canonical application store. */
+/** UTF-8 export snapshots and the activity log; FileStore is the canonical data store. */
 public class FileManager {
     private final Module module;
     public FileManager(Module module) { this.module=module; }

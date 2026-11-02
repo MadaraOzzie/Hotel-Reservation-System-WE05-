@@ -52,7 +52,7 @@ PUT expects all required editable fields, not a partial patch. Unknown propertie
 {"author":"Anonymous","type":"ANONYMOUS","reservation_id":null,"rating":5,"text":"Excellent stay.","status":"PUBLISHED"}
 ```
 
-For verified feedback use type VERIFIED with an existing CHECKED_OUT reservation_id. Ratings are 1–5. See schema.sql for supported values and numeric constraints.
+For verified feedback use type VERIFIED with an existing CHECKED_OUT reservation_id. Ratings are 1–5. `Module` and `HotelServiceLayer` define the supported values and numeric constraints.
 
 ## Permission matrix
 

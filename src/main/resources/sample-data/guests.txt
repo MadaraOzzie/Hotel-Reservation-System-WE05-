@@ -11,7 +11,7 @@
     "email": "kenaughty@example.com",
     "phone": "+65 8123 4567",
     "type": "VIP",
-    "discount_rate": 0.9
+    "discount_rate": 0.1
   },
   {
     "name": "Sofia Silva",
