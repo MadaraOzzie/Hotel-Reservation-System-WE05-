@@ -72,7 +72,7 @@ java -jar target/hotel-reservation-system-1.0.0.jar
 
 ## Six modules / 18 CRUD screens
 
-Every module has its own searchable list, create form, edit form and delete action. Routes are `#/guests`, `#/guests/new`, `#/guests/1/edit`, with the same pattern for all modules.
+Every module has its own searchable list, read-only detail view, create form, edit form and delete action. Routes are `#/guests`, `#/guests/1`, `#/guests/new`, `#/guests/1/edit`, with the same pattern for all modules. Use the eye button in each row to open its detail view.
 
 1. **Guests:** profiles, standard/VIP membership and discount rates.
 2. **Rooms:** room numbers, capacity, standard/suite pricing, suite tax and maintenance.

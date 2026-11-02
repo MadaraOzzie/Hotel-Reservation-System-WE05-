@@ -14,7 +14,7 @@ const paths = {
  services:'<path d="m12 3 3 6 6 3-6 3-3 6-3-6-6-3 6-3z"/>',
  reviews:'<path d="M21 11a9 9 0 0 1-9 9H4l-2 2 1-7a9 9 0 1 1 18-4Z"/><path d="M8 10h8M8 14h5"/>',
  plus:'<path d="M12 5v14M5 12h14"/>', arrow:'<path d="M4 12h16m-5-5 5 5-5 5"/>',
- search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>', edit:'<path d="m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-4-4L5 15z"/>',
+ search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>', eye:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>', edit:'<path d="m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-4-4L5 15z"/>',
  trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
  download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>', logout:'<path d="M10 4H4v16h6M10 12h11m-4-4 4 4-4 4"/>', menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
  check:'<path d="m5 12 4 4L19 6"/>', back:'<path d="M20 12H4m5-5-5 5 5 5"/>'
@@ -63,7 +63,7 @@ function table(key,rows,withActions=true) {
  const m=modules[key];
  const columns=!withActions&&key==='reservations'?m.columns.filter(([k])=>['guest_id','room_id','check_in','status'].includes(k)):m.columns;
  if(!rows.length) return `<div class="empty">${icon(key)}<h3>No ${m.label.toLowerCase()} found</h3><p>Try another search${canWrite(key)?` or add your first ${m.singular}`:''}.</p>${canWrite(key)?`<a class="button" href="#/${key}/new">${icon('plus')}Add ${m.singular}</a>`:''}</div>`;
- return `<div class="table-wrap"><table><thead><tr>${columns.map(([,name])=>`<th scope="col">${name}</th>`).join('')}${withActions&&canWrite(key)?'<th scope="col">Actions</th>':''}</tr></thead><tbody>${rows.map(row=>`<tr>${columns.map(([field],i)=>`<td class="${i===0?'primary-cell':''}">${cell(field,row[field],row)}${field==='name'&&key==='guests'?`<small>Guest #${String(row.id).padStart(3,'0')}</small>`:''}</td>`).join('')}${withActions&&canWrite(key)?`<td><div class="table-actions"><a class="icon-button" href="#/${key}/${row.id}/edit" aria-label="Edit ${esc(m.singular)} ${row.id}" title="Edit">${icon('edit')}</a><button class="icon-button delete-record" data-module="${key}" data-id="${row.id}" aria-label="Delete ${esc(m.singular)} ${row.id}" title="Delete">${icon('trash')}</button></div></td>`:''}</tr>`).join('')}</tbody></table></div>`;
+ return `<div class="table-wrap"><table><thead><tr>${columns.map(([,name])=>`<th scope="col">${name}</th>`).join('')}${withActions?'<th scope="col">Actions</th>':''}</tr></thead><tbody>${rows.map(row=>`<tr>${columns.map(([field],i)=>`<td class="${i===0?'primary-cell':''}">${cell(field,row[field],row)}${field==='name'&&key==='guests'?`<small>Guest #${String(row.id).padStart(3,'0')}</small>`:''}</td>`).join('')}${withActions?`<td><div class="table-actions"><a class="icon-button" href="#/${key}/${row.id}" aria-label="View ${esc(m.singular)} ${row.id}" title="View">${icon('eye')}</a>${canWrite(key)?`<a class="icon-button" href="#/${key}/${row.id}/edit" aria-label="Edit ${esc(m.singular)} ${row.id}" title="Edit">${icon('edit')}</a><button class="icon-button delete-record" data-module="${key}" data-id="${row.id}" aria-label="Delete ${esc(m.singular)} ${row.id}" title="Delete">${icon('trash')}</button>`:''}</div></td>`:''}</tr>`).join('')}</tbody></table></div>`;
 }
 function bindDelete() {
  document.querySelectorAll('.delete-record').forEach(button=>button.onclick=()=>{
@@ -92,6 +92,14 @@ async function listing(key,version) {
  function filter() {const query=$('#search').value.toLowerCase(),value=$('#filter').value;const filtered=rows.filter(r=>(!value||r[m.filter]===value)&&[...Object.values(r),key==='reservations'?guestName(r.guest_id):'',key==='reservations'?roomNumber(r.room_id):''].join(' ').toLowerCase().includes(query));$('#table-container').innerHTML=table(key,filtered);$('#count').textContent=`Showing ${filtered.length} of ${rows.length} records`;bindDelete();}
  $('#search').oninput=filter;$('#filter').onchange=filter;bindDelete();
  if($('#export'))$('#export').onclick=async()=>{const button=$('#export');button.disabled=true;try{const response=await fetch(`/api/${key}/export`,{credentials:'same-origin'});if(!response.ok){const data=await response.json();throw new Error(data.error);}const url=URL.createObjectURL(await response.blob());const a=document.createElement('a');a.href=url;a.download=`${key}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Text snapshot exported.');}catch(e){toast(e.message);}finally{button.disabled=false;}};
+}
+async function viewer(key,id,version) {
+ const m=modules[key];
+ if(key==='reservations') await Promise.all([load('guests'),load('rooms')]);
+ const record=await api(`${key}/${id}`);if(version!==state.routeVersion)return;
+ const details=m.columns.map(([field,label])=>`<div class="detail-item ${['text','description'].includes(field)?'wide':''}"><span>${esc(label)}</span><div class="detail-value">${cell(field,record[field],record)}</div></div>`).join('');
+ const actions=`<div class="head-actions"><a class="button secondary" href="#/${key}">${icon('back')}Back to ${m.label.toLowerCase()}</a>${canWrite(key)?`<a class="button" href="#/${key}/${id}/edit">${icon('edit')}Edit ${m.singular}</a>`:''}</div>`;
+ $('#content').innerHTML=heading('RECORD DETAILS',`${title(m.singular)} #${id}`,m.description,actions)+`<section class="panel"><div class="panel-head"><div><h2>${title(m.singular)} information</h2><p>Read-only details for this ${m.singular}.</p></div>${icon(key)}</div><div class="detail-grid">${details}</div></section>`+footer();
 }
 const defaults = {guests:{type:'STANDARD',discount_rate:0},rooms:{type:'STANDARD',capacity:2,base_price:18000,luxury_tax:0,status:'AVAILABLE'},reservations:{type:'ADVANCE',party_size:1,status:'CONFIRMED'},staff:{role:'RECEPTIONIST',shift:'MORNING'},services:{category:'DINING',type:'PAID',base_cost:0,status:'ACTIVE'},reviews:{type:'ANONYMOUS',rating:5,status:'PUBLISHED',author:'Anonymous'}};
 function fieldMarkup(key,spec,value,editing) {
@@ -136,6 +144,7 @@ async function route() {
   if(key==='dashboard')await dashboard(version);
   else if(parts[1]==='new')await editor(key,null,version);
   else if(parts[2]==='edit'&&/^\d+$/.test(parts[1]))await editor(key,parts[1],version);
+  else if(parts[1]&&/^\d+$/.test(parts[1]))await viewer(key,parts[1],version);
   else await listing(key,version);
  }catch(e){if(version===state.routeVersion&&state.user)$('#content').innerHTML=`<div class="error">${esc(e.message)}</div><a href="#/dashboard" class="button secondary">Return to overview</a>`;}
 }

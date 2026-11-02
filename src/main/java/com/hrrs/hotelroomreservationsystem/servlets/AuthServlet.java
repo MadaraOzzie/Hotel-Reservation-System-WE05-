@@ -75,6 +75,7 @@ public final class AuthServlet extends ApiServlet {
                         response.put("name", row.get("name"));
                         response.put("email", row.get("email"));
                         response.put("role", row.get("role"));
+                        response.put("csrf", session.getAttribute("csrf"));
                         json(s, response);
                         return;
                     }
