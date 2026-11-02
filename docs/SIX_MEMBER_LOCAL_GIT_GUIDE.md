@@ -57,7 +57,7 @@ mvn -v
 
 The Java compiler must be 17+. Maven should report the intended JDK. If Java installations disagree, fix JAVA_HOME/PATH before continuing. Installation instructions: [Maven](https://maven.apache.org/install.html), [Git for Windows](https://git-scm.com/install/windows).
 
-You do not need MySQL, XAMPP, Node.js or a separate Tomcat installation. H2 SQL and Tomcat are Java dependencies. Running the extracted prebuilt copy needs Java only; building a Git clone needs Maven and internet on the first build.
+You do not need MySQL, XAMPP, Node.js or a separate Tomcat installation. JSON file storage and Tomcat are implemented with Java dependencies. Running the extracted prebuilt copy needs Java only; building a Git clone needs Maven and internet on the first build.
 
 ## 4. First launch from the extracted ZIP — everyone
 
@@ -75,7 +75,7 @@ You do not need MySQL, XAMPP, Node.js or a separate Tomcat installation. H2 SQL 
 7. Sign in with `manager@serene.local` / `Serene@2026` so every category's create/edit/delete actions are available.
 8. Keep the terminal open. Press **Ctrl+C** there to stop the server before rebuilding.
 
-The first launch creates `data/hotel.mv.db`, reads the six sample `.txt` files and populates the SQL tables. There is no manual database import step. Each person's database stays on their own PC. Localhost on Member 1's PC is different from localhost on Member 2's PC, so all six may use port 8095 simultaneously on separate PCs.
+The first launch creates `data/store/*.json`, imports the sample room text and seeds demo records. There is no manual import step. Each person's data files stay on their own PC. Localhost on Member 1's PC is different from localhost on Member 2's PC, so all six may use port 8095 simultaneously on separate PCs.
 
 If 8095 is occupied on a particular PC, choose a free port, for example:
 
@@ -90,7 +90,7 @@ Then open http://localhost:8195. This sets the port for processes launched from 
 
 The team needs **one shared repository**, not six unrelated repositories. Choose one leader to create it; everyone, including the leader, uses their own identity for their contributions.
 
-1. Copy `Complete-Runnable-Project` into a normal development location and rename it `serene-hotel`. Avoid OneDrive or other live-sync folders for the active database.
+1. Copy `Complete-Runnable-Project` into a normal development location and rename it `serene-hotel`. Avoid OneDrive or other live-sync folders for the active data folder.
 2. On GitHub, create an **empty** repository, for example `serene-hotel-reservation`. Follow your lecturer's visibility/access requirements. Do not generate a README or .gitignore on GitHub because the local project already has them.
 3. Open PowerShell inside `serene-hotel` and configure your real identity. Replace the sample values:
 
@@ -153,7 +153,7 @@ The first Maven build downloads dependencies. Later offline builds are possible 
 5. Run `Application.main()` with the **project root** as working directory.
 6. Open http://localhost:8095.
 
-Use either IntelliJ Run **or** start.bat at one time. Starting both can cause a port conflict or database lock. If using IntelliJ's bundled Maven, execute `clean package` through the Maven tool window instead of the PowerShell Maven command.
+Use either IntelliJ Run **or** start.bat at one time. Starting both can cause a port conflict or competing writes to the same data files. If using IntelliJ's bundled Maven, execute `clean package` through the Maven tool window instead of the PowerShell Maven command.
 
 ## 8. Create your assigned branch — everyone
 
@@ -179,7 +179,7 @@ Replace 8095 in the addresses if you chose another port. These are recommended b
 
 ## 9. How to run a member's module separately
 
-**The categories are integrated modules, not six standalone servers.** Do not attempt `java GuestServlet.java`, run a model's class or open the UI `.js` file in the browser. Servlets need the HTTP server, session controller, JDBC layer and other shared classes. Reservations also need guests/rooms; verified reviews need reservations.
+**The categories are integrated modules, not six standalone servers.** Do not attempt `java GuestServlet.java`, run a model's class or open the UI `.js` file in the browser. Servlets need the HTTP server, session controller, file-storage layer and other shared classes. Reservations also need guests/rooms; verified reviews need reservations.
 
 Each member can work and demonstrate independently on their own PC by:
 
@@ -189,16 +189,9 @@ Each member can work and demonstrate independently on their own PC by:
 4. Editing their assigned files and coordinating any shared-file changes.
 5. Demonstrating their module's list, create, edit and delete actions.
 
-Other modules remain available as dependencies; no teammate's PC or server is required. Everyone's app and SQL data are independent. No shared remote database is used.
+Other modules remain available as dependencies; no teammate's PC or server is required. Everyone's app and JSON data files are independent. No shared remote store is used.
 
-Optionally use a separate local demonstration database. With the server stopped, run the following from your project root, replacing `guests-demo` with your category:
-
-```powershell
-$env:HOTEL_DB_URL='jdbc:h2:file:./data/guests-demo;DB_CLOSE_ON_EXIT=FALSE'
-.\start.bat
-```
-
-This creates `data/guests-demo.mv.db` with all six tables and fresh sample data. Changing the database name isolates data, not the loaded modules. Close that PowerShell window and open a new one to return to the default `data/hotel.mv.db`. Keep only one instance per database.
+Optionally reset to fresh demonstration data. With the server stopped, rename `data/store` to `data/store-backup`, then restart. A new `data/store` is seeded automatically. To return to your previous data, stop the server and restore the folder. Keep only one instance using a data directory.
 
 ## 10. Exact files each person should work on
 
@@ -213,29 +206,30 @@ All Java files below are under `src/main/java/com/hrrs/hotelroomreservationsyste
 | 5 | `models/HotelService.java`, `PaidService.java`, `ComplimentaryService.java` | `servlets/ServiceServlet.java`, `utils/ServiceFileManager.java` | `src/main/webapp/assets/modules/services.js` |
 | 6 | `models/Review.java`, `VerifiedStayReview.java`, `AnonymousReview.java` | `servlets/ReviewServlet.java`, `utils/ReviewFileManager.java` | `src/main/webapp/assets/modules/reviews.js` |
 
-Models in each cell share the `models/` prefix. Each member also owns `src/main/resources/sample-data/<module>.txt` for their category. Sample files are read only on a new database's first initialization; changing one does not overwrite an existing database.
+Models in each cell share the `models/` prefix. Optional first-run seed data lives in `src/main/resources/sample-data/<module>.txt`. Seed files are read only when initializing a new `data/store` directory; changing one does not overwrite existing records.
 
-The category packages also contain `SQL/<module>.sql` for reference. **The runtime schema is `src/main/resources/schema.sql`**, with a reference copy at `database/schema.sql`. Editing only a category's reference SQL file will not change the application database. Coordinate schema changes with the team; the present CREATE TABLE IF NOT EXISTS initialization is not a migration system for altering existing columns.
+JSON file names and allowed columns are defined once in `utils/Module.java`. Coordinate field changes with the team because existing files are not migrated automatically.
 
 Important shared files:
 
-- `utils/HotelServiceLayer.java`: each module's validation branch, transactions and CRUD orchestration.
-- `utils/SqlRepository.java`: shared prepared SQL queries.
-- `utils/DomainFactory.java`: SQL rows to domain subclasses.
+- `utils/HotelServiceLayer.java`: each module's validation branch, serialized writes and CRUD orchestration.
+- `utils/FileRepository.java`: shared JSON record queries and writes.
+- `utils/FileStore.java`: atomic UTF-8 file reads/writes and first-run seeding.
+- `utils/DomainFactory.java`: stored records to domain subclasses.
 - `servlets/ApiServlet.java` and `CrudServlet.java`: session/role/CSRF checks and HTTP CRUD mechanics.
 - `assets/app.js` and `styles.css`: shared screen rendering, navigation and styling.
 
-These shared implementations are part of the project. A short module servlet delegates to common code; each member must understand the actual validation/SQL path, not only the small wrapper. Tell your teammates before editing a shared file and keep changes focused on your module.
+These shared implementations are part of the project. A short module servlet delegates to common code; each member must understand the actual validation/file-storage path, not only the small wrapper. Tell your teammates before editing a shared file and keep changes focused on your module.
 
 ## 11. Demonstrate each member's CRUD and OOP
 
-Use your own local database and manager account. Start with a list screenshot, then create, read/search, update and delete a temporary record. Capture your own screenshots rather than claiming the provided screenshots as your personal testing evidence.
+Use your own local data directory and manager account. Start with a list screenshot, then create, read/search, update and delete a temporary record. Capture your own screenshots rather than claiming the provided screenshots as your personal testing evidence.
 
 **Member 1 — Guests:** create a guest with a unique email; select VIP and discount `0.10`; search for the guest; edit contact details and discount; export `.txt`; delete the guest after deleting any linked reservations. Explain `User -> Guest -> VIPGuest`, private fields/getters and `calculateDiscount`.
 
 **Member 2 — Rooms:** create a suite with capacity 4, base price 10000 and tax `0.10`; confirm nightly rate 11000; edit rate/status; search and export; delete after removing reservations. Explain `Room -> StandardRoom/SuiteRoom` and overridden final pricing. Do not set an actively reserved room to maintenance.
 
-**Member 3 — Reservations:** create a VIP guest and suite locally or use existing ones. Book two non-overlapping nights for a 10%-discount VIP guest in the 10000 + 10%-tax suite: total should be **19800**. Attempt an overlapping active reservation to show rejection. Edit dates or party size, then cancel; an advance booking has a **1980** cancellation fee when the total is 19800. Delete the cancelled booking after removing any linked reviews. Explain AdvanceBooking/WalkInBooking, BigDecimal, date ranges and transaction protection. Check-in requires the current date to fall inside the stay.
+**Member 3 — Reservations:** create a VIP guest and suite locally or use existing ones. Book two non-overlapping nights for a 10%-discount VIP guest in the 10000 + 10%-tax suite: total should be **19800**. Attempt an overlapping active reservation to show rejection. Edit dates or party size, then cancel; an advance booking has a **1980** cancellation fee when the total is 19800. Delete the cancelled booking after removing any linked reviews. Explain AdvanceBooking/WalkInBooking, BigDecimal, date ranges and serialized atomic writes. Check-in requires the current date to fall inside the stay.
 
 **Member 4 — Staff/Admin:** create a temporary receptionist with a new email and 10+ character password. Read it in the directory; update shift/password; test its sign-in using a separate browser profile/private window. Verify that staff CRUD and room writes are unavailable to that receptionist. Delete the temporary account while signed in as the manager. Do not delete/demote the account you are using. Explain Staff inheritance, role polymorphism, password hashing and backend authorization.
 
@@ -243,7 +237,7 @@ Use your own local database and manager account. Start with a list screenshot, t
 
 **Member 6 — Reviews:** create anonymous feedback, search and edit its rating/text, hide/publish it and export. Create a verified review linked to a CHECKED_OUT reservation; sample booking 3 is a completed stay on a fresh database. Show rejection for a verified review linked to an active booking. Delete your temporary reviews. Explain Review subclasses, display tags and reservation foreign keys.
 
-For every category, show the relevant exported `.txt` and explain the Java file read/write methods. SQL remains primary storage; the supplied documents contain both file-only wording and an SQL option, so the team should confirm the lecturer's interpretation of separately weighted file handling.
+For every category, show the relevant exported `.txt` and explain the Java file read/write methods. JSON files in `data/store` are primary storage; exports and `data/activity.txt` are additional UTF-8 read/write demonstrations.
 
 ## 12. Daily coding and genuine commits
 
@@ -307,7 +301,7 @@ If a conflict occurs, read the files with conflict markers, discuss the intended
 - Screenshots of their three screens and CRUD demonstrations.
 - A brief validation log with date, input, expected result and observed result.
 - One OOP trace showing the overridden method called by the running application.
-- One SQL trace and one text-file read/write trace.
+- One repository trace and one text-file read/write trace.
 
 Put factual notes in a member/module documentation file and complete the real identity/contribution table in `docs/FINAL_REPORT.md`. Use your actual commit history rather than a manually invented table.
 
@@ -332,7 +326,7 @@ git shortlog -sne main
 
 The log records genuine main-branch history at the time of export. After committing the final report/history, include the repository URL and final commit hash in your submission; it is normal that the log snapshot precedes its own documentation commit. Do not treat `git shortlog` counts as proof of quality; reviewers need the actual changes.
 
-The final report should include the real six-person allocation, class diagrams, test evidence, contribution links and Git history. Every member should be ready to trace their UI request through servlet, shared service, OOP method, SQL statement and file operation. The supplied project does not by itself guarantee marks or satisfy the individual contribution/viva requirements.
+The final report should include the real six-person allocation, class diagrams, test evidence, contribution links and Git history. Every member should be ready to trace their UI request through servlet, shared service, OOP method, file-repository call and file operation. The supplied project does not by itself guarantee marks or satisfy the individual contribution/viva requirements.
 
 ## 16. Quick troubleshooting
 
@@ -343,12 +337,12 @@ The final report should include the real six-person allocation, class diagrams, 
 | Missing `target` after cloning | Run `mvn clean package` |
 | Old Java behavior after editing | Stop server, run `mvn package`, restart |
 | Port in use | Set a free PORT in the launch terminal |
-| Database locked | Stop your duplicate application instance; one process per database |
+| Data files appear stale or locked | Stop your duplicate application instance; one process per data directory |
 | No module edit/delete buttons | Sign in as manager; receptionist access is restricted |
 | Cannot delete record | Remove linked children first; cancel/complete active bookings |
-| Changed sample file does not affect current data | It seeds only a new database; use a new demo database name |
+| Changed sample file does not affect current data | It seeds only a new `data/store`; reset or copy that directory for a fresh demo |
 | Cannot push | Accept collaborator invitation, verify remote URL and authenticate with your own account |
 | Wrong Git author | Check repo-local user.name/user.email before committing; do not rewrite shared history casually |
-| SQL file edit had no effect | Edit the runtime schema, rebuild and use a fresh test database or implement a migration |
+| JSON field edit had no effect | Update `Module`, delete or migrate the affected `data/store` file, rebuild and retest |
 
-The six-person setup does not require six ports, a shared database, six Git repositories or six independently deployed servers. It requires six genuine contributors working on one integrated project, with separate local environments and a shared GitHub history.
+The six-person setup does not require six ports, shared data storage, six Git repositories or six independently deployed servers. It requires six genuine contributors working on one integrated project, with separate local environments and a shared GitHub history.

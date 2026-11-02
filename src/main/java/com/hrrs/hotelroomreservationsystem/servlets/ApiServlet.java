@@ -3,7 +3,6 @@ package com.hrrs.hotelroomreservationsystem.servlets;
 import jakarta.servlet.http.*;
 import java.io.*;
 import java.util.*;
-import java.sql.*;
 import com.google.gson.*;
 import com.hrrs.hotelroomreservationsystem.utils.*;
 import com.hrrs.hotelroomreservationsystem.utils.Module;
@@ -23,10 +22,8 @@ public abstract class ApiServlet extends HttpServlet {
         } catch(HttpError e) {error(res,e.status,e.getMessage());}
         catch(IllegalArgumentException|JsonParseException e) {error(res,400,e.getMessage()==null?"Invalid request":e.getMessage());}
         catch(NoSuchElementException e) {error(res,404,e.getMessage());}
-        catch(SQLException e) {
-            if(e.getSQLState()!=null && e.getSQLState().startsWith("23")) error(res,409,"This value already exists, or the record is linked to other records. Remove linked records first.");
-            else {getServletContext().log("Database error",e);error(res,500,"Database operation failed. Please retry.");}
-        } catch(Exception e) {getServletContext().log("Request failed",e);error(res,500,"Unable to complete the request.");}
+        catch(DataConflictException e) {error(res,409,e.getMessage());}
+        catch(Exception e) {getServletContext().log("Request failed",e);error(res,500,"Unable to complete the request.");}
     }
     protected boolean publicAccess(HttpServletRequest r) {return false;}
     protected Map<String,Object> body(HttpServletRequest r) throws IOException {
@@ -40,14 +37,12 @@ public abstract class ApiServlet extends HttpServlet {
     }
     protected void json(HttpServletResponse r,Object value) throws IOException {r.getWriter().write(JSON.toJson(value));}
     protected void error(HttpServletResponse r,int status,String message) throws IOException {r.setStatus(status);json(r,Map.of("error",message));}
-    protected long requireUser(HttpServletRequest r) throws SQLException {
+    protected long requireUser(HttpServletRequest r) {
         HttpSession s=r.getSession(false);
         if(s==null || s.getAttribute("userId")==null) throw new HttpError(401,"Please sign in");
         long id=(Long)s.getAttribute("userId");
-        try(Connection c=Database.open()) {
-            try {Map<String,Object> row=new SqlRepository(c,Module.STAFF).findById(id);s.setAttribute("role",row.get("role"));s.setAttribute("name",row.get("name"));}
-            catch(NoSuchElementException e) {s.invalidate();throw new HttpError(401,"Account no longer exists");}
-        }
+        try {Map<String,Object> row=new FileRepository(Module.STAFF).findById(id);s.setAttribute("role",row.get("role"));s.setAttribute("name",row.get("name"));}
+        catch(NoSuchElementException e) {s.invalidate();throw new HttpError(401,"Account no longer exists");}
         return id;
     }
     protected void manager(HttpServletRequest r) {if(!"MANAGER".equals(r.getSession().getAttribute("role"))) throw new HttpError(403,"Manager access required");}

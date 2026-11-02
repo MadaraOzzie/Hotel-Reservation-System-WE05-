@@ -1,6 +1,6 @@
 package com.hrrs.hotelroomreservationsystem;
 
-import com.hrrs.hotelroomreservationsystem.utils.Database;
+import com.hrrs.hotelroomreservationsystem.utils.FileStore;
 import com.hrrs.hotelroomreservationsystem.servlets.*;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.Context;
@@ -8,7 +8,7 @@ import java.nio.file.*;
 public final class Application {
     private Application() {}
     public static void main(String[] args) throws Exception {
-        Database.initialize();
+        FileStore.initialize();
         Tomcat server=new Tomcat();
         int port=Integer.parseInt(System.getenv().getOrDefault("PORT","8095"));
         server.setPort(port); server.setBaseDir("data/tomcat");

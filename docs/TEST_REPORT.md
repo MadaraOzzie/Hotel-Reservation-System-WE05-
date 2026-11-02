@@ -1,12 +1,12 @@
 # Verification report
 
-Verified on 11 October 2026 using Java 19 (compiling to Java 17), Maven 3.9.6, embedded Tomcat 10.1.60, H2 2.3.232 and Chromium Headless Shell. The running test server used port 8093 and a separate SQL database, which is excluded from the deliverable.
+Verified on 2 November 2026 using Java 17+, Maven 3.10, embedded Tomcat 10.1.60 and Chromium Headless Shell. The running test server used port 8093 and isolated temporary data directories, which are excluded from the deliverable.
 
-## Build and automated SQL tests
+## Build and automated file-storage tests
 
-`mvn package`: **BUILD SUCCESS**. Final Java package builds offline after initial dependency download. **10 tests, 0 failures, 0 errors, 0 skipped.** See `test-evidence.txt` for the test runner output.
+`mvn test`: **BUILD SUCCESS**. Final Java package builds offline after initial dependency download. **10 tests, 0 failures, 0 errors, 0 skipped.** See `test-evidence.txt` for the test runner output.
 
-1. Create, read, update and delete records in all six modules; SQL persistence and suite/VIP price calculation.
+1. Create, read, update and delete records in all six modules; JSON persistence and suite/VIP price calculation.
 2. Reject overlapping active stays and accept adjacent stays.
 3. Cancellation releases availability and computes the advance-booking fee.
 4. Reject zero-night dates and excessive party size.
@@ -37,11 +37,11 @@ The mobile check initially exposed a grid minimum-width issue; it was corrected 
 
 ## Visual evidence
 
-`screenshots/01-login.png`, `02-dashboard.png`, `03-reservations.png`, `04-reservation-form.png`, `05-mobile-dashboard.png`, `06-mobile-form.png`. These are captures of the working app; some contain temporary browser test records. The delivered application starts with clean sample data rather than the test database.
+`screenshots/01-login.png`, `02-dashboard.png`, `03-reservations.png`, `04-reservation-form.png`, `05-mobile-dashboard.png`, `06-mobile-form.png`. These are captures of the working app; some contain temporary browser test records. The delivered application starts with clean sample data rather than the test data directory.
 
 ## Limits of verification
 
-Tests verify a single-process local application and a modern Chromium browser. They do not constitute a production security audit, concurrent multi-instance test, MySQL compatibility test, payment integration test or Safari/Firefox certification. The project must be reviewed and demonstrated by each team member, and the course's SQL/file-handling interpretation should be confirmed with the lecturer.
+Tests verify a single-process local application and a modern Chromium browser. They do not constitute a production security audit, concurrent multi-instance test, payment integration test or Safari/Firefox certification. The project must be reviewed and demonstrated by each team member.
 
 ## Six-category distribution verification
 

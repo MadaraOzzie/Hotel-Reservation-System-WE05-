@@ -1,6 +1,6 @@
-# Class diagrams and database relationships
+# Class diagrams and file relationships
 
-These Mermaid diagrams render in GitHub and compatible Markdown editors. Package names follow the provided blueprint; SQL repositories replace file-only primary persistence while module FileManagers retain read/write features.
+These Mermaid diagrams render in GitHub and compatible Markdown editors. Package names follow the provided blueprint; JSON file repositories provide primary persistence while module FileManagers handle export snapshots and the activity log.
 
 ```mermaid
 classDiagram
@@ -98,10 +98,10 @@ classDiagram
   CrudServlet <|-- ReviewServlet
   CrudServlet --> HotelServiceLayer
   CrudServlet --> FileManager
-  HotelServiceLayer --> SqlRepository
+  HotelServiceLayer --> FileRepository
   HotelServiceLayer --> DomainFactory
-  Repository <|.. SqlRepository
-  SqlRepository --> Database
+  Repository <|.. FileRepository
+  FileRepository --> FileStore
   FileManager <|-- GuestFileManager
   FileManager <|-- RoomFileManager
   FileManager <|-- ReservationFileManager
@@ -192,4 +192,4 @@ erDiagram
   }
 ```
 
-`staff` and `services` are independent operational entities. An anonymous review has a null reservation FK. The database enforces this distinction. The internal `app_metadata` table holds a one-time sample import marker.
+`staff` and `services` are independent operational entities. An anonymous review has a null reservation ID. The service layer enforces unique and referential rules because JSON files have no database constraints. The internal `.seeded` marker file prevents demo data from being imported again.

@@ -3,21 +3,23 @@ package com.hrrs.hotelroomreservationsystem;
 import com.hrrs.hotelroomreservationsystem.utils.*;
 import com.hrrs.hotelroomreservationsystem.utils.Module;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
-import java.sql.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
-/** Real SQL integration tests: independent in-memory database per test. */
+/** File integration tests: isolated data directory per test. */
 class HotelIntegrationTest {
     private final HotelServiceLayer service=new HotelServiceLayer();
+    @TempDir Path temp;
     private Map<String,Object> fields(Object... pairs) {
         Map<String,Object> result=new LinkedHashMap<>();
         for(int i=0;i<pairs.length;i+=2) result.put(pairs[i].toString(),pairs[i+1]);
         return result;
     }
-    @BeforeEach void initialize() throws Exception { Database.useUrl("jdbc:h2:mem:"+UUID.randomUUID()+";DB_CLOSE_DELAY=-1");Database.initialize(); }
+    @BeforeEach void initialize() throws Exception { FileStore.useDirectory(temp.resolve("store"));FileStore.initialize(); }
     private Map<String,Object> reservation(String in,String out) {
         return fields("guest_id","1","room_id","4","check_in",in,"check_out",out,"party_size","2","type","ADVANCE","status","CONFIRMED");
     }
@@ -40,7 +42,7 @@ class HotelIntegrationTest {
         assertEquals(new BigDecimal("19800.00"),service.list(Module.RESERVATIONS).stream().filter(r->((Number)r.get("id")).longValue()==stay).findFirst().orElseThrow().get("total"));
         for(var entry:List.of(Map.entry(Module.REVIEWS,review),Map.entry(Module.RESERVATIONS,stay),Map.entry(Module.GUESTS,guest),Map.entry(Module.ROOMS,room),Map.entry(Module.STAFF,staff),Map.entry(Module.SERVICES,amenity))) {
             service.delete(entry.getKey(),entry.getValue(),1);
-            try(Connection c=Database.open()) {assertThrows(NoSuchElementException.class,()->new SqlRepository(c,entry.getKey()).findById(entry.getValue()));}
+            assertThrows(NoSuchElementException.class,()->new FileRepository(entry.getKey()).findById(entry.getValue()));
         }
     }
     @Test void overlapRejectedButAdjacentStayAllowed() throws Exception {
@@ -59,7 +61,7 @@ class HotelIntegrationTest {
         assertThrows(IllegalArgumentException.class,()->service.save(Module.RESERVATIONS,0,record,1));
     }
     @Test void foreignKeysAndSelfProtection() {
-        assertThrows(SQLException.class,()->service.delete(Module.GUESTS,1,1));
+        assertThrows(DataConflictException.class,()->service.delete(Module.GUESTS,1,1));
         assertThrows(IllegalArgumentException.class,()->service.delete(Module.STAFF,1,1));
         assertThrows(IllegalArgumentException.class,()->service.delete(Module.RESERVATIONS,1,1));
     }
@@ -79,7 +81,7 @@ class HotelIntegrationTest {
     }
     @Test void duplicateEmailRollsBack() throws Exception {
         int before=service.list(Module.GUESTS).size();
-        assertThrows(SQLException.class,()->service.save(Module.GUESTS,0,fields("name","Duplicate","email","amara@example.com","phone","0771234567","type","STANDARD","discount_rate","0"),1));
+        assertThrows(DataConflictException.class,()->service.save(Module.GUESTS,0,fields("name","Duplicate","email","amara@example.com","phone","0771234567","type","STANDARD","discount_rate","0"),1));
         assertEquals(before,service.list(Module.GUESTS).size());
     }
     @Test void complimentaryServicesChargeZero() throws Exception {
