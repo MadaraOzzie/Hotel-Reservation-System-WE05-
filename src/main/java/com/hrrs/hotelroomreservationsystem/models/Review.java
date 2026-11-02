@@ -10,10 +10,18 @@ public abstract class Review extends Entity {
         this.rating = rating;
     }
 
-    public String getText() { return text; }
-    public int getRating() { return rating; }
+    public String getText() {
+        return text;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
     public abstract String getReviewType();
 
     @Override
-    public String getDisplayTag() { return getReviewType() + " review"; }
+    public String getDisplayTag() {
+        return getReviewType() + " review";
+    }
 }

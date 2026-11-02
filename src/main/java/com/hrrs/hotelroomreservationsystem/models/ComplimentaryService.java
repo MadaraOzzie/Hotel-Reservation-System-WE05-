@@ -14,7 +14,18 @@ public final class ComplimentaryService extends HotelService {
         this(id, name, baseCost, "DINING");
     }
 
-    @Override public String getServiceType() { return "COMPLIMENTARY"; }
-    @Override public BigDecimal calculateCost() { return BigDecimal.ZERO.setScale(2); }
-    @Override public String getCategory() { return category; }
+    @Override
+    public String getServiceType() {
+        return "COMPLIMENTARY";
+    }
+
+    @Override
+    public BigDecimal calculateCost() {
+        return BigDecimal.ZERO.setScale(2);
+    }
+
+    @Override
+    public String getCategory() {
+        return category;
+    }
 }

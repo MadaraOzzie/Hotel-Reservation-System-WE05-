@@ -7,5 +7,8 @@ public final class AdvanceBooking extends Reservation {
         super(id, guestId, roomId, checkIn, checkOut);
     }
 
-    @Override public String getBookingType() { return "ADVANCE"; }
+    @Override
+    public String getBookingType() {
+        return "ADVANCE";
+    }
 }
