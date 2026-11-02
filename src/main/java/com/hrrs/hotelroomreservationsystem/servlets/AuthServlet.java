@@ -70,12 +70,14 @@ public final class AuthServlet extends ApiServlet {
                         session.setAttribute("role", row.get("role"));
                         session.setAttribute("name", row.get("name"));
                         session.setAttribute("csrf", java.util.UUID.randomUUID().toString());
+                        Map<String, Object> user = new LinkedHashMap<>();
+                        user.put("id", row.get("id"));
+                        user.put("name", row.get("name"));
+                        user.put("email", row.get("email"));
+                        user.put("role", row.get("role"));
                         Map<String, Object> response = new LinkedHashMap<>();
-                        response.put("id", row.get("id"));
-                        response.put("name", row.get("name"));
-                        response.put("email", row.get("email"));
-                        response.put("role", row.get("role"));
                         response.put("csrf", session.getAttribute("csrf"));
+                        response.put("user", user);
                         json(s, response);
                         return;
                     }
