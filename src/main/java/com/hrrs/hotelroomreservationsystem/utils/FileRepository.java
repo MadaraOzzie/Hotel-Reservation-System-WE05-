@@ -3,7 +3,9 @@ package com.hrrs.hotelroomreservationsystem.utils;
 import java.math.BigDecimal;
 import java.util.*;
 
-/** Reads and writes module records through UTF-8 JSON files. */
+/**
+ * Reads and writes module records through UTF-8 JSON files.
+ */
 public class FileRepository implements Repository {
     private final Module module;
 

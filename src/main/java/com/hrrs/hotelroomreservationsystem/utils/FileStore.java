@@ -1,12 +1,15 @@
 package com.hrrs.hotelroomreservationsystem.utils;
 
 import com.google.gson.*;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-/** UTF-8 JSON files are the canonical application store. */
+/**
+ * UTF-8 JSON files are the canonical application store.
+ */
 public final class FileStore {
     private static final Object LOCK = new Object();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

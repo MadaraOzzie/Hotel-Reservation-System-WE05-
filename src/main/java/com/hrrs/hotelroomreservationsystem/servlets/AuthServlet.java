@@ -15,11 +15,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 public final class AuthServlet extends ApiServlet {
-    @Override protected boolean publicAccess(HttpServletRequest r) {
+    @Override
+    protected boolean publicAccess(HttpServletRequest r) {
         return "/login".equals(r.getPathInfo()) || "/logout".equals(r.getPathInfo()) || "/session".equals(r.getPathInfo()) || r.getPathInfo() == null;
     }
 
-    @Override protected void doGet(HttpServletRequest r, HttpServletResponse s) throws IOException {
+    @Override
+    protected void doGet(HttpServletRequest r, HttpServletResponse s) throws IOException {
         String path = r.getPathInfo() == null ? "/" : r.getPathInfo();
         if (!"/session".equals(path)) throw new IllegalArgumentException("Unsupported auth route");
         HttpSession session = r.getSession(true);
@@ -52,7 +54,8 @@ public final class AuthServlet extends ApiServlet {
         json(s, response);
     }
 
-    @Override protected void doPost(HttpServletRequest r, HttpServletResponse s) throws IOException {
+    @Override
+    protected void doPost(HttpServletRequest r, HttpServletResponse s) throws IOException {
         String path = r.getPathInfo() == null ? "/" : r.getPathInfo();
         if ("/login".equals(path)) {
             Map<String, Object> data = body(r);
