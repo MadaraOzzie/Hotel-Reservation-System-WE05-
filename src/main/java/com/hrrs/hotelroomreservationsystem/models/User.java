@@ -1,5 +1,7 @@
 package com.hrrs.hotelroomreservationsystem.models;
 
+// Abstract class that derives from the class Entity to get name and email variables
+
 public abstract class User extends Entity {
     private final String name;
     private final String email;

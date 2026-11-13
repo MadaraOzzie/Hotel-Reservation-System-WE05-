@@ -1,7 +1,7 @@
 package com.hrrs.hotelroomreservationsystem.models;
 
 /**
- * Shared identity is encapsulated; SQL repositories assign persistent IDs.
+ * Abstract classs for ID variable:D
  */
 public abstract class Entity {
     private long id;

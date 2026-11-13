@@ -2,6 +2,8 @@ package com.hrrs.hotelroomreservationsystem.models;
 
 import java.math.BigDecimal;
 
+// VIP user with discount privileges :) MEOW
+
 public final class VIPGuest extends Guest {
     private final BigDecimal discountRate;
 

@@ -2,6 +2,7 @@ package com.hrrs.hotelroomreservationsystem.models;
 
 import java.math.BigDecimal;
 
+// Default Guest bruh
 public class Guest extends User {
     public Guest(long id, String name, String email) {
         super(id, name, email);
