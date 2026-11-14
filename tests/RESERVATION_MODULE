@@ -1,0 +1,79 @@
+# Reservation Module Technical Documentation
+
+## 1. Overview
+The **Reservation Module** manages room bookings across the Hotel Room Reservation System (HRRS). It enforces booking rules, calculates stay totals and cancellation fees using exact `BigDecimal` arithmetic, prevents room double-bookings, and persists records atomically in UTF-8 JSON storage (`data/store/reservations.json`).
+
+---
+
+## 2. Object-Oriented Class Hierarchy
+
+### 2.1 Inheritance & Abstraction
+- **`Entity` (`models/Entity.java`)**
+  - Abstract root superclass encapsulating `private long id` and enforcing non-negative ID validation.
+  - Declares abstract `getDisplayTag()` implemented by every domain model.
+- **`Reservation` (`models/Reservation.java`)**
+  - Abstract subclass extending `Entity`.
+  - Encapsulates immutable reservation attributes: `guestId`, `roomId`, `checkIn`, and `checkOut`.
+  - Declares abstract `getBookingType()` so concrete subclasses define their booking category.
+  - Implements `calculateTotal(Room room, Guest guest)` and `calculateCancellationFee(BigDecimal total)`.
+- **`AdvanceBooking` (`models/AdvanceBooking.java`)**
+  - `final` concrete subclass of `Reservation` returning `"ADVANCE"` for `getBookingType()`.
+  - Subject to a **10% cancellation fee** when cancelled.
+- **`WalkInBooking` (`models/WalkInBooking.java`)**
+  - `final` concrete subclass of `Reservation` returning `"WALK_IN"` for `getBookingType()`.
+  - Exempt from cancellation penalties (`0.00` fee).
+
+### 2.2 Polymorphism in Pricing
+`Reservation.calculateTotal(Room room, Guest guest)` relies on runtime polymorphism across three model hierarchies:
+1. **Stay Duration:** `nights = Math.max(1L, ChronoUnit.DAYS.between(checkIn, checkOut))`
+2. **Room Rate (`room.calculateFinalPrice()`):**
+   - `StandardRoom` returns `basePrice`.
+   - `SuiteRoom` returns `basePrice + (basePrice * luxuryTax)`.
+3. **Guest Discount (`guest.calculateDiscount(subtotal)`):**
+   - `Guest` returns `0.00`.
+   - `VIPGuest` returns `subtotal * discountRate`.
+4. **Final Total:** `(room.calculateFinalPrice() * nights) - discount`, rounded to 2 decimal places (`RoundingMode.HALF_UP`).
+
+---
+
+## 3. Business Validation Rules (`HotelServiceLayer`)
+
+All reservation creates and updates execute inside a `synchronized(WRITE_LOCK)` block in `HotelServiceLayer.java` to guarantee thread safety:
+
+| Rule | Validation Condition | Error Response |
+| :--- | :--- | :--- |
+| **Stay Duration** | `check_out` must be after `check_in` and within 365 days | `Stay must be between 1 and 365 nights` |
+| **Party Capacity** | `party_size` (1–12) cannot exceed `room.capacity` | `Party exceeds room capacity` |
+| **Room Availability** | Active bookings require `room.status == "AVAILABLE"` | `Room is under maintenance` |
+| **Double-Booking Check** | Rejects overlapping dates (`in < otherOut && out > otherIn`) for `CONFIRMED` or `CHECKED_IN` bookings on the same `room_id` | `Room already reserved for these dates` |
+| **Check-In Window** | `CHECKED_IN` status allowed only when `check_in <= today < check_out` | `Check-in is only available during the stay dates` |
+| **Check-Out Window** | `CHECKED_OUT` status disallowed before `check_in` | `Cannot check out before arrival` |
+| **Quote Preservation** | Updating an existing booking without changing `guest_id`, `room_id`, `check_in`, `check_out`, or `type` preserves the original `total` | Historical rate retained |
+| **Safe Deletion** | Bookings in `CONFIRMED` or `CHECKED_IN` status cannot be deleted directly | `Cancel or complete this reservation before deletion` |
+| **Review Integrity** | Reservations linked to `VerifiedStayReview` records cannot be deleted or reverted from `CHECKED_OUT` | `This reservation is linked to reviews. Remove linked reviews first.` |
+
+---
+
+## 4. REST API Endpoints (`ReservationServlet`)
+
+All endpoints require an active authenticated session (`AuthServlet`), and write requests (`POST`, `PUT`, `DELETE`) require a valid `X-CSRF-Token` header (`ApiServlet`).
+
+### 4.1 List All Reservations (`READ`)
+- **Request:** `GET /api/reservations`
+- **Response (`200 OK`):**
+```json
+[
+  {
+    "id": 1,
+    "guest_id": "1",
+    "room_id": "4",
+    "check_in": "2026-10-11",
+    "check_out": "2026-10-14",
+    "party_size": "2",
+    "type": "ADVANCE",
+    "status": "CONFIRMED",
+    "total": "124740.00",
+    "cancellation_fee": "0.00",
+    "display_tag": "ADVANCE reservation"
+  }
+]
