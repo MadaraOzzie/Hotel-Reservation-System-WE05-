@@ -6,5 +6,6 @@ public final class AnonymousReview extends Review {
         super(id, text, rating);
     }
    // Overrides the method to return the review type
-    @Override public String getReviewType() { return "ANONYMOUS"; }
+    @Override public String getReviewType() { return "ANONYMOUS"; // Returns the review type as ANONYMOUS
+                                            }
 }
