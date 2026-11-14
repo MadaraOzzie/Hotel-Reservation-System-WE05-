@@ -21,7 +21,7 @@ public abstract class Reservation extends Entity {
         this.checkIn = checkIn;
         this.checkOut = checkOut;
     }
-
+    // Standard getter methods for encapsulated reservation fields
     public long getGuestId() { return guestId; }
     public long getRoomId() { return roomId; }
     public LocalDate getCheckIn() { return checkIn; }
