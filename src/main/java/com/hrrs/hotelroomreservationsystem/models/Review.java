@@ -13,7 +13,7 @@ public abstract class Review extends Entity {
         this.text = text;
         this.rating = rating;
     }
-
+    // Returns the review text
     public String getText() {
         return text;
     }
