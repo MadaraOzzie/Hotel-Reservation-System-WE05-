@@ -23,7 +23,7 @@ public abstract class Review extends Entity {
     }
      // Abstract method to get the type of review
     public abstract String getReviewType();
-
+    // Overrides the parent class method to return the review display tag
     @Override
     public String getDisplayTag() {
         return getReviewType() + " review";
