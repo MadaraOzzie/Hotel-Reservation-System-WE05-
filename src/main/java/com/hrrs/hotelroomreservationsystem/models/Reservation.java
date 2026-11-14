@@ -26,6 +26,7 @@ public abstract class Reservation extends Entity {
     public long getRoomId() { return roomId; }
     public LocalDate getCheckIn() { return checkIn; }
     public LocalDate getCheckOut() { return checkOut; }
+    // Implemented by concrete subclasses (AdvanceBooking or WalkInBooking)
     public abstract String getBookingType();
 
     public BigDecimal calculateTotal(Room room, Guest guest) {
