@@ -6,6 +6,7 @@ public abstract class Review extends Entity {
     private final String text;
     // Stores the rating given by the customer
     private final int rating;
+    // Constructor to initialize review details
 
     protected Review(long id, String text, int rating) {
         super(id);
