@@ -9,7 +9,7 @@ public abstract class Review extends Entity {
     // Constructor to initialize review details
 
     protected Review(long id, String text, int rating) {
-        super(id);
+        super(id);// Calls the parent class constructor
         this.text = text;
         this.rating = rating;
     }
