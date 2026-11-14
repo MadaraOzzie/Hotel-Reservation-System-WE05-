@@ -2,6 +2,7 @@ package com.hrrs.hotelroomreservationsystem.models;
 
 // Abstract class representing a review
 public abstract class Review extends Entity {
+    // Stores the review text
     private final String text;
     private final int rating;
 
