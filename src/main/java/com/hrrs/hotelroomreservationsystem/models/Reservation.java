@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 
 // Abstract base class for all hotel reservations, inheriting unique ID from Entity
 public abstract class Reservation extends Entity {
+    // Immutable reservation details linking a guest and room for specific stay dates
     private final long guestId;
     private final long roomId;
     private final LocalDate checkIn;
