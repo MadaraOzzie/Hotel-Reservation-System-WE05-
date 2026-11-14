@@ -4,6 +4,7 @@ package com.hrrs.hotelroomreservationsystem.models;
 public abstract class Review extends Entity {
     // Stores the review text
     private final String text;
+    // Stores the rating given by the customer
     private final int rating;
 
     protected Review(long id, String text, int rating) {
