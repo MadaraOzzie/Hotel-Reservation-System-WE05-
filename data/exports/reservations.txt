@@ -1,0 +1,28 @@
+[
+  {
+    "id": 2,
+    "guest_id": 4,
+    "room_id": 5,
+    "check_in": "2026-11-05",
+    "check_out": "2026-11-12",
+    "party_size": 1,
+    "type": "ADVANCE",
+    "status": "CONFIRMED",
+    "total": 173250.00,
+    "cancellation_fee": 0,
+    "display_tag": "ADVANCE reservation"
+  },
+  {
+    "id": 1,
+    "guest_id": "1",
+    "room_id": "4",
+    "check_in": "2026-10-11",
+    "check_out": "2026-10-14",
+    "party_size": "2",
+    "type": "ADVANCE",
+    "status": "CONFIRMED",
+    "total": "124740.00",
+    "cancellation_fee": "0.00",
+    "display_tag": "ADVANCE reservation"
+  }
+]
