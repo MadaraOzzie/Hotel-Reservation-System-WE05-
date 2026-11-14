@@ -12,7 +12,8 @@ public abstract class Reservation extends Entity {
     private final long roomId;
     private final LocalDate checkIn;
     private final LocalDate checkOut;
-
+    
+// Initializes shared reservation attributes and passes ID to the parent Entity class
     protected Reservation(long id, long guestId, long roomId, LocalDate checkIn, LocalDate checkOut) {
         super(id);
         this.guestId = guestId;
