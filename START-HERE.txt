@@ -1,0 +1,10 @@
+START HERE
+
+1. Extract the ZIP to a writable folder.
+2. Install Java 17 or newer.
+3. On Windows, run start.bat. On macOS/Linux, run sh start.sh.
+4. Open http://localhost:8095.
+
+If the runnable JAR is missing (as it normally will be after cloning Git), the start script builds it from source. That requires Maven 3.9+ and internet access the first time to download dependencies.
+
+On first launch, the app creates data/store/ and saves six JSON files there. No SQL server is required. Open pom.xml in IntelliJ to inspect or edit the source. The application code is under src/.
