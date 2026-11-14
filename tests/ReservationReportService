@@ -1,0 +1,185 @@
+package com.hrrs.hotelroomreservationsystem.utils;
+
+import com.hrrs.hotelroomreservationsystem.models.AdvanceBooking;
+import com.hrrs.hotelroomreservationsystem.models.Reservation;
+import com.hrrs.hotelroomreservationsystem.models.WalkInBooking;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+// Read-only reporting and analytics utility for the Reservation module
+public final class ReservationReportService {
+
+    private final Repository reservationRepository;
+
+    // Default constructor backed by the canonical FileRepository for reservations
+    public ReservationReportService() {
+        this(new FileRepository(Module.RESERVATIONS));
+    }
+
+    // Overloaded constructor allowing custom or test repositories
+    public ReservationReportService(Repository reservationRepository) {
+        if (reservationRepository == null) {
+            throw new IllegalArgumentException("Reservation repository is required");
+        }
+        this.reservationRepository = reservationRepository;
+    }
+
+    // Builds an executive summary map of reservation counts, revenue, and cancellation fees
+    public Map<String, Object> buildSummaryReport() {
+        List> rows = reservationRepository.findAll();
+
+        long totalBookings = rows.size();
+        long confirmedCount = 0;
+        long checkedInCount = 0;
+        long checkedOutCount = 0;
+        long cancelledCount = 0;
+        long advanceCount = 0;
+        long walkInCount = 0;
+        long totalNights = 0;
+
+        BigDecimal activeRevenue = BigDecimal.ZERO;
+        BigDecimal collectedCancellationFees = BigDecimal.ZERO;
+
+        for (Map<String, Object> row : rows) {
+            String status = String.valueOf(row.getOrDefault("status", ""));
+            String type = String.valueOf(row.getOrDefault("type", ""));
+            BigDecimal total = parseDecimal(row.get("total"));
+            BigDecimal cancellationFee = parseDecimal(row.get("cancellation_fee"));
+
+            if (AdvanceBooking.BOOKING_TYPE.equals(type)) {
+                advanceCount++;
+            } else if ("WALK_IN".equals(type)) {
+                walkInCount++;
+            }
+
+            switch (status) {
+                case "CONFIRMED" -> {
+                    confirmedCount++;
+                    activeRevenue = activeRevenue.add(total);
+                }
+                case "CHECKED_IN" -> {
+                    checkedInCount++;
+                    activeRevenue = activeRevenue.add(total);
+                }
+                case "CHECKED_OUT" -> {
+                    checkedOutCount++;
+                    activeRevenue = activeRevenue.add(total);
+                }
+                case "CANCELLED" -> {
+                    cancelledCount++;
+                    collectedCancellationFees = collectedCancellationFees.add(cancellationFee);
+                }
+                default -> {
+                    // Ignore unknown status values safely
+                }
+            }
+
+            totalNights += calculateNights(row);
+        }
+
+        BigDecimal averageStayNights = totalBookings == 0
+                ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.valueOf(totalNights)
+                        .divide(BigDecimal.valueOf(totalBookings), 2, RoundingMode.HALF_UP);
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("total_bookings", totalBookings);
+        summary.put("confirmed_count", confirmedCount);
+        summary.put("checked_in_count", checkedInCount);
+        summary.put("checked_out_count", checkedOutCount);
+        summary.put("cancelled_count", cancelledCount);
+        summary.put("advance_bookings", advanceCount);
+        summary.put("walk_in_bookings", walkInCount);
+        summary.put("total_nights", totalNights);
+        summary.put("average_stay_nights", averageStayNights);
+        summary.put("active_revenue", activeRevenue.setScale(2, RoundingMode.HALF_UP));
+        summary.put("collected_cancellation_fees", collectedCancellationFees.setScale(2, RoundingMode.HALF_UP));
+        return summary;
+    }
+
+    // Filters reservations matching a specific lifecycle status (CONFIRMED, CHECKED_IN, etc.)
+    public List> findByStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("Status filter is required");
+        }
+        String normalized = status.trim().toUpperCase();
+        List> matches = new ArrayList<>();
+        for (Map<String, Object> row : reservationRepository.findAll()) {
+            if (normalized.equals(String.valueOf(row.get("status")))) {
+                matches.add(row);
+            }
+        }
+        return matches;
+    }
+
+    // Returns all active (CONFIRMED or CHECKED_IN) reservations for a specific room
+    public List> findActiveBookingsForRoom(long roomId) {
+        List> matches = new ArrayList<>();
+        for (Map<String, Object> row : reservationRepository.findAll()) {
+            long rowRoomId = FileRepository.id(row.get("room_id"));
+            String status = String.valueOf(row.get("status"));
+            if (rowRoomId == roomId && ("CONFIRMED".equals(status) || "CHECKED_IN".equals(status))) {
+                matches.add(row);
+            }
+        }
+        matches.sort(Comparator.comparing(row -> LocalDate.parse(String.valueOf(row.get("check_in")))));
+        return matches;
+    }
+
+    // Returns all reservations belonging to a specific guest ordered newest first
+    public List> findBookingsForGuest(long guestId) {
+        List> matches = new ArrayList<>();
+        for (Map<String, Object> row : reservationRepository.findAll()) {
+            if (FileRepository.id(row.get("guest_id")) == guestId) {
+                matches.add(row);
+            }
+        }
+        return matches;
+    }
+
+    // Converts a stored reservation record into its typed OOP domain model
+    public Reservation toDomainModel(Map<String, Object> row) {
+        if (row == null || row.isEmpty()) {
+            throw new IllegalArgumentException("Reservation record cannot be empty");
+        }
+        return DomainFactory.reservation(row);
+    }
+
+    // Checks whether a reservation record represents a walk-in stay
+    public boolean isWalkIn(Map<String, Object> row) {
+        return toDomainModel(row) instanceof WalkInBooking;
+    }
+
+    // Computes billed stay nights for a stored reservation row
+    private long calculateNights(Map<String, Object> row) {
+        Object inRaw = row.get("check_in");
+        Object outRaw = row.get("check_out");
+        if (inRaw == null || outRaw == null) {
+            return 0L;
+        }
+        LocalDate checkIn = LocalDate.parse(String.valueOf(inRaw));
+        LocalDate checkOut = LocalDate.parse(String.valueOf(outRaw));
+        long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
+        return Math.max(1L, nights);
+    }
+
+    // Safely parses monetary fields stored as BigDecimal or String
+    private BigDecimal parseDecimal(Object raw) {
+        if (raw == null) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(String.valueOf(raw));
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+}
