@@ -21,7 +21,7 @@ public abstract class Review extends Entity {
     public int getRating() {
         return rating;
     }
-
+     // Abstract method to get the type of review
     public abstract String getReviewType();
 
     @Override
