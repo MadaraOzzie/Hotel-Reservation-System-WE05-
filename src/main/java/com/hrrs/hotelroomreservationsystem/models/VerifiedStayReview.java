@@ -2,7 +2,8 @@ package com.hrrs.hotelroomreservationsystem.models;
 
 // Class representing a review from
 //a customer with a verified stay
-public final class VerifiedStayReview extends Review {
+public final class VerifiedStayReview extends Review 
+{
 
     // Stores the reservation ID related 
     //to the review
@@ -10,7 +11,8 @@ public final class VerifiedStayReview extends Review {
 
     // Constructor to initialize verified 
     //stay review details
-    public VerifiedStayReview(long id, String text, int rating, long reservationId) {
+    public VerifiedStayReview(long id, String text, int rating, long reservationId) 
+    {
 
         // Calls the parent class constructor
         // Passes the review ID, text, and rating
@@ -22,7 +24,8 @@ public final class VerifiedStayReview extends Review {
     }
 
     // Method to return the reservation ID
-    public long getReservationId() {
+    public long getReservationId()
+    {
 
         // Returns the stored reservation ID
         return reservationId;
@@ -31,7 +34,8 @@ public final class VerifiedStayReview extends Review {
     // Overrides the getDisplayTag method 
     //from the parent class
     @Override
-    public String getDisplayTag() {
+    public String getDisplayTag() 
+    {
 
         // Returns the display tag for
         //a verified stay review
