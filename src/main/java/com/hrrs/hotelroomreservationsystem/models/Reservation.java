@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+// Abstract base class for all hotel reservations, inheriting unique ID from Entity
 public abstract class Reservation extends Entity {
     private final long guestId;
     private final long roomId;
