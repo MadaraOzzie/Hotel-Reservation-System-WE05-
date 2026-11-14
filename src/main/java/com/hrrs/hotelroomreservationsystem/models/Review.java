@@ -17,7 +17,7 @@ public abstract class Review extends Entity {
     public String getText() {
         return text;
     }
-
+    // Returns the review rating
     public int getRating() {
         return rating;
     }
